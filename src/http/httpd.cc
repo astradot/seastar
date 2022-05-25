@@ -473,6 +473,10 @@ future<> http_server::listen(socket_address addr) {
     return listen(addr, lo);
 }
 future<> http_server::stop() {
+    if (_tasks_done.has_value()) {
+        _kill_timer.cancel();
+        return std::move(_tasks_done.value());
+    }
     future<> tasks_done = _task_gate.close();
     for (auto&& l : _listeners) {
         l.abort_accept();
@@ -481,6 +485,19 @@ future<> http_server::stop() {
         c.shutdown();
     }
     return tasks_done;
+}
+future<> http_server::graceful_pre_stop(int timeout_ms) {
+    _tasks_done = _task_gate.close();
+    for (auto &&l : _listeners) {
+        l.abort_accept();
+    }
+    _kill_timer.set_callback([this] {
+        for (auto &&c : _connections) {
+            c.shutdown();
+        }
+    });
+    _kill_timer.arm(std::chrono::milliseconds(timeout_ms));
+    return make_ready_future<>();
 }
 
 // FIXME: This could return void
@@ -558,6 +575,12 @@ future<> http_server_control::start(const sstring& name) {
 
 future<> http_server_control::stop() {
     return _server_dist->stop();
+}
+
+future<> http_server_control::graceful_pre_stop(int timeout_ms) {
+    return _server_dist->invoke_on_all([timeout_ms](http_server &server) {
+        server.graceful_pre_stop(timeout_ms).get();
+    });
 }
 
 future<> http_server_control::set_routes(std::function<void(routes& r)> fun) {

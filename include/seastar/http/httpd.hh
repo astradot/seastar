@@ -146,6 +146,8 @@ class http_server {
     size_t _content_length_limit = std::numeric_limits<size_t>::max();
     bool _content_streaming = false;
     gate _task_gate;
+    std::optional<future<>> _tasks_done;
+    timer<> _kill_timer;
 public:
     routes _routes;
     using connection = seastar::httpd::connection;
@@ -191,6 +193,7 @@ public:
     future<> listen(socket_address addr, listen_options lo);
     future<> listen(socket_address addr);
     future<> stop();
+    future<> graceful_pre_stop(int timeout_ms);
 
     future<> do_accepts(int which);
 
@@ -239,6 +242,7 @@ public:
 
     future<> start(const sstring& name = generate_server_name());
     future<> stop();
+    future<> graceful_pre_stop(int timeout_ms);
     future<> set_routes(std::function<void(routes& r)> fun);
     future<> listen(socket_address addr);
     future<> listen(socket_address addr, listen_options lo);

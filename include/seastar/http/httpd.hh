@@ -195,7 +195,7 @@ public:
     future<> listen(socket_address addr);
     future<> stop();
     template<typename Clock = std::chrono::steady_clock>
-    future<> graceful_pre_stop(Clock::duration timeout);
+    future<> graceful_pre_stop(typename Clock::duration timeout);
 
     future<> do_accepts(int which);
 
@@ -214,8 +214,8 @@ private:
     friend class http_server_tester;
 };
 
-template<typename Clock = std::chrono::steady_clock>
-future<> http_server::graceful_pre_stop(Clock::duration timeout) {
+template<typename Clock>
+future<> http_server::graceful_pre_stop(typename Clock::duration timeout) {
     future<> f = _task_gate.close();
     shared_future<with_clock<Clock>> shared_done(std::move(f));
     _tasks_done = shared_done.get_future();
@@ -264,7 +264,7 @@ public:
     future<> start(const sstring& name = generate_server_name());
     future<> stop();
     template<typename Clock = std::chrono::steady_clock>
-    future<> graceful_pre_stop(Clock::duration timeout);
+    future<> graceful_pre_stop(typename Clock::duration timeout);
     future<> set_routes(std::function<void(routes& r)> fun);
     future<> listen(socket_address addr);
     future<> listen(socket_address addr, listen_options lo);
@@ -272,8 +272,8 @@ public:
 };
 
 
-template<typename Clock = std::chrono::steady_clock>
-future<> http_server_control::graceful_pre_stop(Clock::duration timeout) {
+template<typename Clock>
+future<> http_server_control::graceful_pre_stop(typename Clock::duration timeout) {
     return _server_dist->invoke_on_all([timeout](http_server &server) {
         return server.graceful_pre_stop<Clock>(timeout);
     });

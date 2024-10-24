@@ -1641,7 +1641,7 @@ SEASTAR_TEST_CASE(case_insensitive_header_reply) {
 }
 
 SEASTAR_THREAD_TEST_CASE(multiple_connections) {
-    loopback_connection_factory lcf(1);
+    loopback_connection_factory lcf = loopback_connection_factory::with_pending_capacity(smp::count + 1, 1);
     http_server server("test");
     httpd::http_server_tester::listeners(server).emplace_back(lcf.get_server_socket());
     socket_address addr{ipv4_addr()};
@@ -1830,4 +1830,59 @@ BOOST_AUTO_TEST_CASE(test_path_decode_changed) {
 
     auto expected_chars = seastar::sstring{" "};
     BOOST_REQUIRE_EQUAL(result, expected_chars);
+}
+
+namespace seastar::http {
+std::ostream& boost_test_print_type(std::ostream& os, reply::status_class sc) {
+    constexpr std::string_view status_strings[] {
+        "1xx: Informational",
+        "2xx: Success",
+        "3xx: Redirection",
+        "4xx: Client Error",
+        "5xx: Server Error",
+        "Unclassified"
+    };
+    auto status = static_cast<std::underlying_type_t<reply::status_class>>(sc) - 1u;
+    if (status < std::size(status_strings)) {
+        return os << status_strings[status];
+    }
+    return os << "Unclassified";
+}
+} // namespace seastar::http
+
+BOOST_AUTO_TEST_CASE(test_http_status_classification) {
+    size_t informational = 0;
+    size_t success = 0;
+    size_t redirection = 0;
+    size_t client_error = 0;
+    size_t server_error = 0;
+    size_t unclassified = 0;
+    for (auto i = -100; i < 700; ++i) {
+        auto classification = http::reply::classify_status(static_cast<http::reply::status_type>(i));
+        if (i >= 100 && i < 200) {
+            ++informational;
+            BOOST_REQUIRE_EQUAL(classification, http::reply::status_class::informational);
+        } else if (i >= 200 && i < 300) {
+            ++success;
+            BOOST_REQUIRE_EQUAL(classification, http::reply::status_class::success);
+        } else if (i >= 300 && i < 400) {
+            ++redirection;
+            BOOST_REQUIRE_EQUAL(classification, http::reply::status_class::redirection);
+        } else if (i >= 400 && i < 500) {
+            ++client_error;
+            BOOST_REQUIRE_EQUAL(classification, http::reply::status_class::client_error);
+        } else if (i >= 500 && i < 600) {
+            ++server_error;
+            BOOST_REQUIRE_EQUAL(classification, http::reply::status_class::server_error);
+        } else {
+            ++unclassified;
+            BOOST_REQUIRE_EQUAL(classification, http::reply::status_class::unclassified);
+        }
+    }
+    BOOST_REQUIRE_EQUAL(informational, 100);
+    BOOST_REQUIRE_EQUAL(success, 100);
+    BOOST_REQUIRE_EQUAL(redirection, 100);
+    BOOST_REQUIRE_EQUAL(client_error, 100);
+    BOOST_REQUIRE_EQUAL(server_error, 100);
+    BOOST_REQUIRE_EQUAL(unclassified, 300);
 }

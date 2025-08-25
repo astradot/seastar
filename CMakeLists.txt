@@ -496,7 +496,6 @@ add_library (seastar
   include/seastar/core/align.hh
   include/seastar/core/aligned_buffer.hh
   include/seastar/core/app-template.hh
-  include/seastar/core/array_map.hh
   include/seastar/core/bitops.hh
   include/seastar/core/bitset-iter.hh
   include/seastar/core/byteorder.hh
@@ -528,7 +527,6 @@ add_library (seastar
   include/seastar/core/iostream.hh
   include/seastar/util/later.hh
   include/seastar/core/layered_file.hh
-  include/seastar/core/linux-aio.hh
   include/seastar/core/loop.hh
   include/seastar/core/lowres_clock.hh
   include/seastar/core/manual_clock.hh
@@ -833,7 +831,6 @@ target_link_libraries (seastar
   PUBLIC
     Boost::boost
     Boost::program_options
-    Boost::thread
     c-ares::cares
     fmt::fmt
     lz4::lz4

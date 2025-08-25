@@ -48,6 +48,7 @@ module;
 #include <array>
 #include <algorithm>
 #include <atomic>
+#include <barrier>
 #include <bitset>
 #include <cassert>
 #include <chrono>
@@ -115,7 +116,6 @@ module;
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/irange.hpp>
-#include <boost/thread/barrier.hpp>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -166,7 +166,6 @@ export module seastar;
 #include <seastar/core/align.hh>
 #include <seastar/core/aligned_buffer.hh>
 #include <seastar/core/app-template.hh>
-#include <seastar/core/array_map.hh>
 #include <seastar/core/bitops.hh>
 #include <seastar/core/bitset-iter.hh>
 #include <seastar/core/byteorder.hh>
